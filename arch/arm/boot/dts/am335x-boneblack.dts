@@ -11,6 +11,8 @@
 #include "am335x-bone-common.dtsi"
 #include <dt-bindings/display/tda998x.h>
 
+#include <dt-bindings/interrupt-controller/irq.h>
+
 / {
 	model = "TI AM335x BeagleBone Black";
 	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
@@ -84,6 +86,17 @@
 			AM33XX_IOPAD(0x994, PIN_OUTPUT_PULLUP | MUX_MODE0) /* mcasp0_fsx.mcasp0_fsx */
 			AM33XX_IOPAD(0x990, PIN_OUTPUT_PULLDOWN | MUX_MODE0) /* mcasp0_aclkx.mcasp0_aclkx */
 			AM33XX_IOPAD(0x86c, PIN_OUTPUT_PULLDOWN | MUX_MODE7) /* gpmc_a11.GPIO1_27 */
+		>;
+	};
+
+	spi0_pins: pinmux_spi0_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x950, PIN_INPUT_PULLUP | MUX_MODE0)    /* spi0_sclk */
+			AM33XX_IOPAD(0x954, PIN_INPUT_PULLUP | MUX_MODE0)    /* spi0_d0 */
+			AM33XX_IOPAD(0x958, PIN_OUTPUT_PULLUP | MUX_MODE0)   /* spi0_d1 */
+			AM33XX_IOPAD(0x95c, PIN_OUTPUT_PULLUP | MUX_MODE0)   /* spi0_cs0 */
+			AM33XX_IOPAD(0x878, PIN_INPUT | MUX_MODE7)           /* gpio1_28 */
+			AM33XX_IOPAD(0x840, PIN_OUTPUT_PULLUP | MUX_MODE7)   /* gpio1_16 */
 		>;
 	};
 };
@@ -181,5 +194,36 @@
 		simple-audio-card,codec {
 			sound-dai = <&tda19988>;
 		};
+	};
+};
+
+/*
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_pins>;
+	status = "okay";
+
+	heart_rate@0 {
+		compatible = "ti,afe4410";
+		reg = <0>;
+		spi-max-frequency = <200000>;
+
+		interrupt-parent = <&gpio1>;
+		interrupts = <28 IRQ_TYPE_EDGE_FALLING>;
+
+		reset-gpios = <&gpio1 16 0>;
+	};
+};
+*/
+
+&i2c2 {
+	heart_rate@5b {
+		compatible = "ti,afe4410";
+		reg = <0x5b>;
+
+		interrupt-parent = <&gpio1>;
+		interrupts = <28 IRQ_TYPE_EDGE_FALLING>;
+
+		reset-gpios = <&gpio1 16 0>;
 	};
 };
