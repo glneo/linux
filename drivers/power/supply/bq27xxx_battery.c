@@ -794,11 +794,20 @@ MODULE_PARM_DESC(poll_interval,
 static inline int bq27xxx_read(struct bq27xxx_device_info *di, int reg_index,
 			       bool single)
 {
+	int ret;
+
 	/* Reports EINVAL for invalid/missing registers */
 	if (!di || di->regs[reg_index] == INVALID_REG_ADDR)
 		return -EINVAL;
 
-	return di->bus.read(di, di->regs[reg_index], single);
+	ret = di->bus.read(di, di->regs[reg_index], single);
+	if (ret < 0) {
+		dev_err(di->dev, "bus read returned: %d\n", ret);
+		dev_dbg(di->dev, "failed to read register 0x%02x (index %d)\n",
+			di->regs[reg_index], reg_index);
+	}
+
+	return ret;
 }
 
 /*
@@ -815,7 +824,7 @@ static int bq27xxx_battery_read_soc(struct bq27xxx_device_info *di)
 		soc = bq27xxx_read(di, BQ27XXX_REG_SOC, false);
 
 	if (soc < 0)
-		dev_dbg(di->dev, "error reading State-of-Charge\n");
+		dev_err(di->dev, "error reading state-of-charge\n");
 
 	return soc;
 }
@@ -830,8 +839,7 @@ static int bq27xxx_battery_read_charge(struct bq27xxx_device_info *di, u8 reg)
 
 	charge = bq27xxx_read(di, reg, false);
 	if (charge < 0) {
-		dev_dbg(di->dev, "error reading charge register %02x: %d\n",
-			reg, charge);
+		dev_err(di->dev, "error reading charge\n");
 		return charge;
 	}
 
@@ -853,8 +861,14 @@ static inline int bq27xxx_battery_read_nac(struct bq27xxx_device_info *di)
 
 	if (di->chip == BQ27000 || di->chip == BQ27010) {
 		flags = bq27xxx_read(di, BQ27XXX_REG_FLAGS, true);
-		if (flags >= 0 && (flags & BQ27000_FLAG_CI))
+		if (flags < 0) {
+			dev_err(di->dev, "error reading flags\n");
+			return flags;
+		}
+		else if (flags & BQ27000_FLAG_CI) {
+			dev_dbg(di->dev, "capacity not accurate\n");
 			return -ENODATA;
+		}
 	}
 
 	return bq27xxx_battery_read_charge(di, BQ27XXX_REG_NAC);
@@ -883,7 +897,7 @@ static int bq27xxx_battery_read_dcap(struct bq27xxx_device_info *di)
 		dcap = bq27xxx_read(di, BQ27XXX_REG_DCAP, false);
 
 	if (dcap < 0) {
-		dev_dbg(di->dev, "error reading initial last measured discharge\n");
+		dev_err(di->dev, "error reading design capacity\n");
 		return dcap;
 	}
 
@@ -905,7 +919,7 @@ static int bq27xxx_battery_read_energy(struct bq27xxx_device_info *di)
 
 	ae = bq27xxx_read(di, BQ27XXX_REG_AE, false);
 	if (ae < 0) {
-		dev_dbg(di->dev, "error reading available energy\n");
+		dev_err(di->dev, "error reading available energy\n");
 		return ae;
 	}
 
@@ -962,8 +976,7 @@ static int bq27xxx_battery_read_time(struct bq27xxx_device_info *di, u8 reg)
 
 	tval = bq27xxx_read(di, reg, false);
 	if (tval < 0) {
-		dev_dbg(di->dev, "error reading time register %02x: %d\n",
-			reg, tval);
+		dev_err(di->dev, "error reading time\n");
 		return tval;
 	}
 
@@ -983,8 +996,7 @@ static int bq27xxx_battery_read_pwr_avg(struct bq27xxx_device_info *di)
 
 	tval = bq27xxx_read(di, BQ27XXX_REG_AP, false);
 	if (tval < 0) {
-		dev_err(di->dev, "error reading average power register  %02x: %d\n",
-			BQ27XXX_REG_AP, tval);
+		dev_err(di->dev, "error reading average power\n");
 		return tval;
 	}
 
@@ -1054,7 +1066,7 @@ static int bq27xxx_battery_read_health(struct bq27xxx_device_info *di)
 
 	flags = bq27xxx_read(di, BQ27XXX_REG_FLAGS, has_singe_flag);
 	if (flags < 0) {
-		dev_err(di->dev, "error reading flag register:%d\n", flags);
+		dev_err(di->dev, "error reading flags\n");
 		return flags;
 	}
 
