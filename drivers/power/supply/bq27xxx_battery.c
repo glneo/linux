@@ -810,6 +810,63 @@ static inline int bq27xxx_read(struct bq27xxx_device_info *di, int reg_index,
 	return ret;
 }
 
+static inline int bq27xxx_write(struct bq27xxx_device_info *di, int reg_index,
+				u16 value, bool single)
+{
+	int ret;
+
+	/* Reports EINVAL for invalid/missing registers */
+	if (!di || di->regs[reg_index] == INVALID_REG_ADDR)
+		return -EINVAL;
+
+	ret = di->bus.write(di, di->regs[reg_index], value, single);
+	if (ret < 0) {
+		dev_err(di->dev, "bus write returned: %d\n", ret);
+		dev_dbg(di->dev, "failed to write register 0x%02x (index %d)\n",
+			di->regs[reg_index], reg_index);
+	}
+
+	return ret;
+}
+
+static inline int bq27xxx_read_bulk(struct bq27xxx_device_info *di,
+				    int reg_index, u8 *data, int len)
+{
+	int ret;
+
+	/* Reports EINVAL for invalid/missing registers */
+	if (!di || di->regs[reg_index] == INVALID_REG_ADDR)
+		return -EINVAL;
+
+	ret = di->bus.read_bulk(di, di->regs[reg_index], data, len);
+	if (ret < 0) {
+		dev_err(di->dev, "bus read_bulk returned: %d\n", ret);
+		dev_dbg(di->dev, "failed to read_bulk register 0x%02x (index %d)\n",
+			di->regs[reg_index], reg_index);
+	}
+
+	return ret;
+}
+
+static inline int bq27xxx_write_bulk(struct bq27xxx_device_info *di,
+				     int reg_index, u8 *data, int len)
+{
+	int ret;
+
+	/* Reports EINVAL for invalid/missing registers */
+	if (!di || di->regs[reg_index] == INVALID_REG_ADDR)
+		return -EINVAL;
+
+	ret = di->bus.write_bulk(di, di->regs[reg_index], data, len);
+	if (ret < 0) {
+		dev_err(di->dev, "bus write_bulk returned: %d\n", ret);
+		dev_dbg(di->dev, "failed to write_bulk register 0x%02x (index %d)\n",
+			di->regs[reg_index], reg_index);
+	}
+
+	return ret;
+}
+
 /*
  * Return the battery State-of-Charge
  * Or < 0 if something fails.
