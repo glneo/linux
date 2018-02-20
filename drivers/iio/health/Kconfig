@@ -33,6 +33,38 @@ config AFE4404
 	  To compile this driver as a module, choose M here: the
 	  module will be called afe4404.
 
+config AFE4420
+	tristate "TI AFE4420 heart rate and pulse oximeter sensor"
+	select IIO_BUFFER
+	help
+	  Say yes to enable support for the Texas Instruments AFE4420
+	  heart rate monitor and low-cost pulse oximeter.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called afe4420-core.
+
+config AFE4420_I2C
+	tristate "TI AFE4420 I2C Interface Support"
+	depends on AFE4420 && I2C
+	select REGMAP_I2C
+	help
+	  Say yes to enable support for the Texas Instruments AFE4420
+	  connected over an I2C bus.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called afe4420-i2c.
+
+config AFE4420_SPI
+	tristate "TI AFE4420 SPI Interface Support"
+	depends on AFE4420 && SPI_MASTER
+	select REGMAP_SPI
+	help
+	  Say yes to enable support for the Texas Instruments AFE4420
+	  connected over an SPI bus.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called afe4420-spi.
+
 config MAX30100
 	tristate "MAX30100 heart rate and pulse oximeter sensor"
 	depends on I2C
